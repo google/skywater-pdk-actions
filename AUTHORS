@@ -1,0 +1,16 @@
+# This is the list of SkyWater PDK's significant contributors.
+#
+# This does not necessarily list everyone who has contributed code,
+# especially since many employees of one corporation may be contributing.
+# To see the full list of contributors, see the revision history in
+# source control.
+
+# Companies
+Google LLC
+efabless corporation
+The American University in Cairo
+
+# Individuals
+tansell@google.com, me@mith.ro, https://github.com/mithro (Tim 'mithro' Ansell)
+ax3ghazy@aucegypt.edu, https://github.com/ax3ghazy (Ahmed Ghazy)
+aagouhar@efabless.com, https://github.com/agorararmard (Amr Gouhar)
