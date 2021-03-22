@@ -32,6 +32,7 @@ from library_submodules import git_clean
 
 __dir__ = os.path.dirname(__file__)
 
+GH_PULLREQUEST_NAMESPACE = 'pullrequest/temp/{pr_id}/{seq_id}/{branch}'
 
 def library_patch_submodules(
         patchfile, pull_request_id, repo_name, access_token, commit_hash):
@@ -93,8 +94,8 @@ def library_patch_submodules(
     sequence_increment = 1
     if old_git_sequence != -1:
         old_pr_branch = \
-            'pullrequest/temp/{0}/{1}/master'.format(
-                pull_request_id, str(old_git_sequence))
+            GH_PULLREQUEST_NAMESPACE.format(
+                pr_id=pull_request_id, seq_id=old_git_sequence, branch='master')
         git('checkout {0}'.format(old_pr_branch), git_root)
         internal_patch = subprocess.check_output(
             'git diff {0}..master'.format(old_pr_branch),
@@ -115,8 +116,8 @@ def library_patch_submodules(
         print("Now Pushing", (v_branch, v_tag))
         print('-'*20, flush=True)
 
-        n_branch = 'pullrequest/temp/{0}/{1}/{2}'.format(
-            pull_request_id, str(git_sequence), v_branch)
+        n_branch = GH_PULLREQUEST_NAMESPACE.format(
+            pr_id=pull_request_id, seq_id=git_sequence, branch=v_branch)
         branch_link = "https://github.com/{0}/tree/{1}".format(
             repo_name, n_branch)
         n_branch_links += "\n- {0}".format(branch_link)
@@ -130,8 +131,8 @@ We will skip it!!! \
             return False
 
     print()
-    n_branch = 'pullrequest/temp/{0}/{1}/master'.format(
-        pull_request_id, str(git_sequence))
+    n_branch = GH_PULLREQUEST_NAMESPACE.format(
+        pr_id=pull_request_id, seq_id=git_sequence, branch='master')
     branch_link = "https://github.com/{0}/tree/{1}".format(repo_name, n_branch)
     n_branch_links += "\n- {0}".format(branch_link)
 
@@ -173,10 +174,8 @@ def library_merge_submodules(pull_request_id, repo_name, access_token):
         v_branch = "branch-{}.{}.{}".format(*ov)
         v_tag = "v{}.{}.{}".format(*ov)
         git_sequence = int(get_sequence_number(pull_request_id))
-        n_branch = 'pullrequest/temp/{0}/{1}/{2}'\
-                   .format(pull_request_id,
-                           str(git_sequence),
-                           v_branch)
+        n_branch = GH_PULLREQUEST_NAMESPACE.format(
+            pr_id=pull_request_id, seq_id=git_sequence, branch=v_branch)
         print()
         print("Was:", pv, "Now updating", (v_branch, v_tag), "with", n_branch)
         print('-'*20, flush=True)
@@ -192,21 +191,23 @@ def library_merge_submodules(pull_request_id, repo_name, access_token):
         print("Now Pushing", v_branch)
         git('push -f origin {0}:{0}'.format(v_branch), git_root)
         for i in range(git_sequence + 1):
-            git('push origin --delete pullrequest/temp/{0}/{1}/{2}'
-                .format(pull_request_id, str(i), v_branch),
+            d_branch = GH_PULLREQUEST_NAMESPACE.format(
+                pr_id=pull_request_id, seq_id=i, branch=v_branch)
+            git('push origin --delete {0}'.format(d_branch),
                 git_root)
 
     git_clean(git_root)
-    n_branch = 'pullrequest/temp/{0}/{1}/master'.format(pull_request_id,
-                                                        str(git_sequence))
+    n_branch = GH_PULLREQUEST_NAMESPACE.format(
+        pr_id=pull_request_id, seq_id=git_sequence, branch='master')
     git('checkout master', git_root)
     print("Now reseting master to ", n_branch)
     git('reset --hard origin/{0}'.format(n_branch), git_root)
     print("Now Pushing", v_branch)
     git('push -f origin master:master', git_root)
     for i in range(git_sequence + 1):
-        git('push origin --delete pullrequest/temp/{0}/{1}/master'
-            .format(pull_request_id, str(i)),
+        d_branch = GH_PULLREQUEST_NAMESPACE.format(
+            pr_id=pull_request_id, seq_id=i, branch='master')
+        git('push origin --delete {0}'.format(d_branch),
             git_root)
     git_issue_close(repo_name, pull_request_id, access_token)
     comment_body = """\
@@ -232,8 +233,8 @@ def library_rebase_submodules(pull_request_id):
         v_branch = "branch-{}.{}.{}".format(*ov)
         v_tag = "v{}.{}.{}".format(*ov)
         git_sequence = int(get_sequence_number(pull_request_id))
-        n_branch = 'pullrequest/temp/{0}/{1}/{2}'.format(
-            pull_request_id, str(git_sequence), v_branch)
+        n_branch = GH_PULLREQUEST_NAMESPACE.format(
+            pr_id=pull_request_id, seq_id=git_sequence, branch=v_branch)
         print()
         print("Was:", pv,
               "Now rebasing ", n_branch,
@@ -251,8 +252,8 @@ def library_rebase_submodules(pull_request_id):
         git('push -f origin {0}:{0}'.format(n_branch), git_root)
 
     git_clean(git_root)
-    n_branch = 'pullrequest/temp/{0}/{1}/master'.format(
-        pull_request_id, str(git_sequence))
+    n_branch = GH_PULLREQUEST_NAMESPACE.format(
+        pr_id=pull_request_id, seq_id=git_sequence, branch='master')
     git('checkout {0}'.format(n_branch), git_root)
     git('rebase origin/master', git_root)
     print("Now Pushing", n_branch)
