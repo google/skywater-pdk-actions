@@ -34,12 +34,12 @@ __dir__ = os.path.dirname(__file__)
 
 GH_PULLREQUEST_NAMESPACE = 'pullrequest/temp/{pr_id}/{seq_id}/{branch}'
 
+
 def library_patch_submodules(
         patchfile, pull_request_id, repo_name, access_token, commit_hash):
 
     assert os.path.exists(patchfile), patchfile
     assert os.path.isfile(patchfile), patchfile
-    assert pull_request_id.isdigit(), pull_request_id
 
     print()
     print()
@@ -95,7 +95,9 @@ def library_patch_submodules(
     if old_git_sequence != -1:
         old_pr_branch = \
             GH_PULLREQUEST_NAMESPACE.format(
-                pr_id=pull_request_id, seq_id=old_git_sequence, branch='master')
+                pr_id=pull_request_id,
+                seq_id=old_git_sequence,
+                branch='master')
         git('checkout {0}'.format(old_pr_branch), git_root)
         internal_patch = subprocess.check_output(
             'git diff {0}..master'.format(old_pr_branch),
