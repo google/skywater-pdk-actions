@@ -18,7 +18,8 @@
 import os
 import subprocess
 import sys
-from library_submodules import run
+import urllib3
+import requests
 from library_submodules import reset_branches
 from library_submodules import label_exists
 from library_submodules import get_git_root
@@ -46,32 +47,41 @@ def handle_pull_requests(args):
     git_root = get_git_root()
 
     git_fetch(git_root)
-    prs_open_url = \
-        'https://api.github.com/repos/{0}/pulls?state=open'.format(repo_name)
-    curl_grep = \
-        "curl -sS {0} | grep -o -E 'pull/[[:digit:]]+'".format(prs_open_url)
-    comp_cmd = "{0} | sed 's/pull\\///g' | sort | uniq".format(curl_grep)
-    all_open_pull_requests = subprocess.check_output(
-        comp_cmd, shell=True).decode('utf-8').split()
-
+    r = requests.get(
+        'https://api.github.com/repos/{0}/pulls?state=open'.format(
+            repo_name))
+    all_open_pull_requests = \
+        sorted(list(set([str(item['number']) for item in r.json()])))
+    pr_hash_list = subprocess.check_output(
+        "git ls-remote origin 'pull/*/head'",
+        shell=True).decode('utf-8').split('\n')
     print("All Open Pull Requests: ", all_open_pull_requests)
     library_clean_submodules(all_open_pull_requests)
     for pull_request_id in all_open_pull_requests:
         print()
         print("Processing:", str(pull_request_id))
         print('-'*20, flush=True)
-        commit_hash = subprocess.check_output(
-            "git ls-remote origin 'pull/*/head'| grep 'pull/{0}/head'".format(
-                pull_request_id) +
-            " | tail -1 | awk '{ print $1F }'",
-            shell=True).decode('utf-8')
+        commit_hash = ''
+        for pr_hash in pr_hash_list:
+            if 'pull/{0}/head'.format(pull_request_id) in pr_hash:
+                commit_hash = pr_hash.split()[0]
+                break
+        print("head commit hash: ", commit_hash)
         print()
         print("Getting Patch")
         print()
-        run('wget https://github.com/{0}/pull/{1}.patch'
-            .format(repo_name, pull_request_id))
-        run('mv {0}.patch {1}/'.format(pull_request_id, external_path))
+        http = urllib3.PoolManager()
+        patch_request = \
+            http.request('GET',
+                         'https://github.com/{0}/pull/{1}.patch'
+                         .format(repo_name, pull_request_id))
+        if patch_request.status != 200:
+            print('Unable to get patch. Skipping...')
+            continue
+
         patchfile = '{0}/{1}.patch'.format(external_path, pull_request_id)
+        with open(patchfile, 'w') as f:
+            f.write(patch_request.data.decode('utf-8'))
         print("Will try to apply: ", patchfile)
 
         if library_patch_submodules(
