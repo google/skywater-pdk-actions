@@ -32,7 +32,7 @@ from library_submodules import git_clean
 
 __dir__ = os.path.dirname(__file__)
 
-GH_PULLREQUEST_NAMESPACE = 'pullrequest/temp/{pr_id}/{seq_id}/{branch}'
+GH_PULLREQUEST_NAMESPACE = 'backport/{pr_id}/{seq_id}/{branch}'
 
 
 def library_patch_submodules(
