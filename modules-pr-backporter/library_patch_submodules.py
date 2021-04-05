@@ -32,7 +32,8 @@ from library_submodules import git_clean
 
 __dir__ = os.path.dirname(__file__)
 
-GH_PULLREQUEST_NAMESPACE = 'backport/{pr_id}/{seq_id}/{branch}'
+GH_PULLREQUEST_PREFIX = 'backport/'
+GH_PULLREQUEST_NAMESPACE = GH_PULLREQUEST_PREFIX + '{pr_id}/{seq_id}/{branch}'
 
 
 def library_patch_submodules(
@@ -274,7 +275,7 @@ def library_clean_submodules(all_open_pull_requests):
                                            shell=True).decode('utf-8').split()
     print("All branchs:", all_branches)
     for br in all_branches:
-        if "origin/pullrequest/temp/" in br \
+        if "origin/" + GH_PULLREQUEST_PREFIX in br \
                 and br.split('/')[3] not in all_open_pull_requests:
             print('Deleting ', br)
             git('push origin --delete {0}'.format(br.split('origin/', 1)[1]),
