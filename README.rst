@@ -29,8 +29,8 @@ Actions
 Modules Related
 ---------------
 
-```modules-pr-backporter`` <./modules-pr-backporter>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`modules-pr-backporter <./modules-pr-backporter>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``modules-pr-backporter`` action is used on the
 `SkyWater modules <https://github.com/google?q=skywater-pdk-libs>`__
@@ -39,8 +39,8 @@ The ``modules-pr-backporter`` action is used on the
 to enable automatic backporting of pull requests to older released
 versions.
 
-```modules-roller`` <./modules-roller>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`modules-roller <./modules-roller>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``modules-roller`` action is used by
 `the primary SkyWater PDK repo <https://github.com/google/skywater-pdk>`__
