@@ -17,7 +17,7 @@ This repository contains the GitHub actions uses with the
 `Google skywater-pdk <https://github.com/google/skywater-pdk>`__ and
 `related modules <https://github.com/google?q=skywater-pdk&type=&language=>`__.
 
-.. image:: https://github.com/google/skywater-pdk/raw/master/docs/_static/skywater-pdk-logo.png
+.. image:: https://github.com/google/skywater-pdk/raw/main/docs/_static/skywater-pdk-logo.png
    :alt: Google + SkyWater Logo Image
    :align: center
    :target: https://github.com/google/skywater-pdk
@@ -65,7 +65,7 @@ License
 =======
 
 The SkyWater Open Source PDK GitHub actions are released under the
-`Apache 2.0 license <https://github.com/google/skywater-pdk/blob/master/LICENSE>`_.
+`Apache 2.0 license <https://github.com/google/skywater-pdk/blob/main/LICENSE>`_.
 
 The copyright details (which should also be found at the top of every file) are;
 
