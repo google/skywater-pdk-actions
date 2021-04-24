@@ -17,7 +17,7 @@ This repository contains the GitHub actions uses with the
 `Google skywater-pdk <https://github.com/google/skywater-pdk>`__ and
 `related modules <https://github.com/google?q=skywater-pdk&type=&language=>`__.
 
-.. image:: https://github.com/google/skywater-pdk/raw/master/docs/_static/skywater-pdk-logo.png
+.. image:: https://github.com/google/skywater-pdk/raw/main/docs/_static/skywater-pdk-logo.png
    :alt: Google + SkyWater Logo Image
    :align: center
    :target: https://github.com/google/skywater-pdk
@@ -29,8 +29,8 @@ Actions
 Modules Related
 ---------------
 
-```modules-pr-backporter`` <./modules-pr-backporter>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`modules-pr-backporter <./modules-pr-backporter>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``modules-pr-backporter`` action is used on the
 `SkyWater modules <https://github.com/google?q=skywater-pdk-libs>`__
@@ -39,8 +39,8 @@ The ``modules-pr-backporter`` action is used on the
 to enable automatic backporting of pull requests to older released
 versions.
 
-```modules-roller`` <./modules-roller>`__
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`modules-roller <./modules-roller>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``modules-roller`` action is used by
 `the primary SkyWater PDK repo <https://github.com/google/skywater-pdk>`__
@@ -65,7 +65,7 @@ License
 =======
 
 The SkyWater Open Source PDK GitHub actions are released under the
-`Apache 2.0 license <https://github.com/google/skywater-pdk/blob/master/LICENSE>`_.
+`Apache 2.0 license <https://github.com/google/skywater-pdk/blob/main/LICENSE>`_.
 
 The copyright details (which should also be found at the top of every file) are;
 
