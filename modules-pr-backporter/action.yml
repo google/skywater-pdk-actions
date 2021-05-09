@@ -14,16 +14,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: 'Skywater PDK Libraries Pull Request Merger on Release Branches'
-description: 'This is a Pull Request Merger Action that works on repos with release branch structure.'
+name: Skywater PDK Pull Request to release branches backporter
+description: >
+  This action takes a pull request and backports it to the release branches.
+  Once the results work, it will also merge the pull request.
+
 runs:
   using: "composite"
   steps:
-    - name: Get External Path Name
-      run: echo "EXTERNAL_PATH=$(cd $GITHUB_WORKSPACE/../ && pwd)" >> $GITHUB_ENV
-      shell: bash
-    - name: Run The Pull Request Merger
-      run: |
-        cd $GITHUB_WORKSPACE
-        python3 ${{ github.action_path }}/modules-pr-backporter/library_multi_pull_requests.py 1 $GITHUB_REPOSITORY 2 ${{ github.token }} 3 $EXTERNAL_PATH
-      shell: bash
+  - name: Backporter
+    env:
+      GH_TOKEN: ${{ github.token }}
+    run: |
+      cd $GITHUB_WORKSPACE
+      python3 ${{ github.action_path }}/backport.py $GITHUB_REPOSITORY
+    shell: bash

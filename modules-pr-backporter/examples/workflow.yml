@@ -1,4 +1,4 @@
-# Copyright 2021 SkyWater PDK Authors
+# Copyright 2021 The SkyWater PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,20 +14,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: CI
+name: modules-pr-backporter
 
-on: [push]
+on:
+  schedule:
+    - cron: '*/5 * * * *'
 
 jobs:
   build:
-    if: ${{ github.event.label.name == 'ready-to-merge' }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: master
-          fetch-depth: '50'
-
-      - name: Run The Pull Request Backporter
-        uses: google/skywater-pdk-actions/modules-pr-backporter@main
+    - uses: mithro/skywater-pdk-actions/modules-pr-backporter@main

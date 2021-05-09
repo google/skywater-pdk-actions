@@ -17,18 +17,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import base64
+import json
 import os
+import requests
 import subprocess
 import sys
 import time
-import requests
-import json
+
+import ssh_keys
 
 
 def run(cmd, **kw):
     sys.stdout.flush()
     sys.stderr.flush()
-    print(cmd, '-'*5, flush=True)
+    if 'config' not in cmd:
+        print(cmd, '-'*5, flush=True)
+    else:
+        print(cmd.split('config')[0], '...', '-'*5, flush=True)
     subprocess.check_call(cmd, shell=True, stderr=subprocess.STDOUT, **kw)
     print('-'*5, flush=True)
     sys.stdout.flush()
@@ -45,6 +51,8 @@ def git(cmd, gitdir, can_fail=False, **kw):
         env['GIT_COMMITTER_DATE'] = DATE
     env['GIT_COMMITTER_NAME'] = "GitHub Actions Bot"
     env['GIT_COMMITTER_EMAIL'] = 'actions_bot@github.com'
+    env['GIT_AUTHOR_NAME'] = "GitHub Actions Bot"
+    env['GIT_AUTHOR_EMAIL'] = 'actions_bot@github.com'
 
     if 'push' in cmd:
         cmd += ' --verbose --progress'
@@ -62,6 +70,29 @@ def git(cmd, gitdir, can_fail=False, **kw):
                 time.sleep(10)
                 continue
             raise
+
+
+def git_head(gitdir, branch='HEAD'):
+    output = subprocess.check_output(['git', 'rev-parse', '--verify', branch], cwd=gitdir)
+    return output.decode('utf-8').strip()
+
+
+def git_config(gitdir, key, value, level='local'):
+    if level != 'local':
+        gitdir = None
+    git("config --{} '{}' '{}'".format(level, key, value), gitdir)
+
+
+#def github_auth_set(gitdir, access_token):
+#    auth_token = base64.b64encode('x-access-token:{}'.format(access_token).encode('utf-8'))
+#    extra_header = "AUTHORIZATION: basic {}".format(auth_token.decode())
+#    git_config(gitdir, 'http.https://github.com/.extraheader', extra_header)
+
+
+def github_auth_set(gitdir):
+    ssh_keys.import_keys()
+    #git_config(gitdir, "protocol.allow", "never", level='system')
+    #git_config(gitdir, "protocol.ssh.allow", "always", level='system')
 
 
 def out_v(v, versions):
@@ -84,23 +115,9 @@ def reset_branches(git_root):
     all_local_branches = subprocess.check_output(
         'git branch', shell=True).decode('utf-8').split()
     for branch in all_local_branches:
-        if branch != "*" and not branch.startswith('pullrequest/temp/'):
+        if branch != "*":
             git('checkout {0}'.format(branch), git_root)
             git('reset --hard origin/{0}'.format(branch), git_root)
-
-
-def get_sequence_number(pull_request_id):
-    git_sequence = -1
-    all_branches = subprocess.check_output(
-        'git branch -r', shell=True).decode('utf-8').split()
-    print("All branchs:", all_branches)
-    git_matching_branches = [br for br in all_branches
-                             if "origin/pullrequest/temp/{0}/"
-                                .format(pull_request_id) in br]
-
-    for matching_branch in git_matching_branches:
-        git_sequence = max(int(matching_branch.split("/")[4]), git_sequence)
-    return git_sequence
 
 
 def label_exists(repo_name, pull_request_id, label):

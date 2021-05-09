@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-#
 # Copyright 2020 SkyWater PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,79 +16,24 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-import json
-import logging
 import os
-import pathlib
 import pprint
 import requests
-import subprocess
-import sys
-import textwrap
-import urllib3
 
-from library_submodules import reset_branches
-from library_submodules import label_exists
-from library_submodules import get_git_root
-from library_submodules import git_fetch
-from library_submodules import git
-from library_patch_submodules import backport_hashes
-from library_patch_submodules import backport_branch_info
-from library_patch_submodules import library_patch_submodules
-from library_patch_submodules import library_merge_submodules
-from library_patch_submodules import library_clean_submodules
+from backport_common import *
 
 
-# Figure out the GitHub access token.
-ACCESS_TOKEN = os.environ.get('GH_APP_TOKEN', None)
-if not ACCESS_TOKEN:
-    raise SystemError('Did not find an access token of `GH_APP_TOKEN`')
+def github_headers(_headers={}):
+    if not _headers:
+        # Figure out the GitHub access token.
+        access_token = os.environ.get('GH_APP_TOKEN', None)
+        if not access_token:
+            raise SystemError('Did not find an access token of `GH_APP_TOKEN`')
 
+        _headers['Authorization'] = 'token ' + access_token
+        _headers['Accept'] = 'application/vnd.github.v3+json'
+    return _headers
 
-DEBUG = True # os.environ.get('ACTIONS_STEP_DEBUG', 'false').lower() in ('true', '1')
-
-def flush():
-    sys.stderr.flush()
-    sys.stdout.flush()
-
-
-def debug(*args, **kw):
-    if DEBUG:
-        print(*args, **kw)
-
-def debug_json(name, json):
-    if DEBUG:
-        group_start(name)
-        pprint.pprint(json)
-        group_end()
-
-
-GROUP_OPEN = []
-
-def group_end():
-    flush()
-    assert GROUP_OPEN
-    f, title = GROUP_OPEN.pop()
-    f()
-    f('-'*50)
-    f("::endgroup::")
-    flush()
-
-
-def group_start(title, f=print):
-    flush()
-    if GROUP_OPEN:
-        group_end()
-    f("::group::"+str(title))
-    f('-'*50)
-    flush()
-    GROUP_OPEN.append((f, title))
-
-
-HEADERS = {
-    'Authorization': 'token ' + ACCESS_TOKEN,
-    'Accept': 'application/vnd.github.v3+json',
-}
 
 def get_github_json(url, *args, **kw):
     full_url = url.format(*args, **kw)
@@ -102,7 +45,7 @@ def send_github_json(url, mode, json_data=None):
 
     kw = {
         'url': url,
-        'headers': HEADERS,
+        'headers': github_headers(),
     }
     if mode == 'POST':
         f = requests.post
@@ -121,82 +64,6 @@ def send_github_json(url, mode, json_data=None):
     json_data = f(**kw).json()
     debug_json(f'Got from {url}', json_data)
     return json_data
-
-
-def handle_pull_request(http, event_json):
-
-    pull_request_id = event_json['number']
-    repo_name = event_json['repository']['full_name']
-
-    # Get the state for the current pull request
-    pr_seq_dat = backport_hashes(repo_name, pull_request_id)
-    group_start("Current backport data")
-    pprint.pprint(pr_seq_dat)
-    group_end()
-
-    # Download the patch metadata
-    print('Status URL:', event_json['pull_request']['statuses_url'])
-
-    # Check if the pull request needs to be backported.
-    pr_hash = event_json['pull_request']['head']['sha'][:5]
-    print('Source branch hash:', pr_hash)
-    if pr_seq_dat and pr_seq_dat[-1][1] == pr_hash:
-        print('Existing backport branches up to date')
-        print()
-        for seq_id, seq_hash, branches in pr_seq_dat:
-            print(' - Sequence:', 'v{}-{}'.format(seq_id, seq_hash))
-            bwidth = max(len(n) for n in branches)
-            for name, git_hash in branches.items():
-                print('   * {} @ {}'.format(name.ljust(bwidth), git_hash[:5]))
-            print()
-        return 0
-
-    # Backporting needs to run
-    label = event_json['pull_request']['head']['label']
-    commitmsg_filename = os.path.abspath(
-        'commit-{0}.msg'.format(pull_request_id))
-    with open(commitmsg_filename, 'w') as f:
-        f.write("Merge pull request #{pr_id} from {label}\n".format(
-            pr_id=pull_request_id,
-            label=label,
-        ))
-        f.write("\n")
-        f.write(event_json['pull_request']['title'])
-        f.write("\n")
-        f.write("\n")
-        if event_json['pull_request']['body'].strip():
-            f.write(event_json['pull_request']['body'])
-
-    debug('Pull request commit message', '-'*50)
-    debug(open(commitmsg_filename).read())
-    debug('-'*50)
-
-    # Download the patch
-    print("Getting Patch")
-    patch_request = http.request(
-        'GET',
-        'https://github.com/{0}/pull/{1}.patch' .format(
-            repo_name, pull_request_id))
-
-    patch_data = patch_request.data.decode('utf-8')
-    debug('Pull request patch data', '-'*50)
-    debug(patch_data)
-    debug('-'*50)
-
-    if patch_request.status != 200:
-        print('Unable to get patch. Skipping...')
-        return -1
-
-    patch_filename = os.path.abspath('pr-{0}.patch'.format(pull_request_id))
-    with open(patch_filename, 'w') as f:
-        f.write(patch_request.data.decode('utf-8'))
-
-    # Backport the patch
-    print("Will try to apply: ", patch_filename)
-    library_patch_submodules(
-        ACCESS_TOKEN,
-        repo_name,
-        pull_request_id, pr_hash, patch_filename, commitmsg_filename)
 
 
 BACKPORT_MARKER = 'BACKPORT'
@@ -367,44 +234,3 @@ Run of {workflow_run['name']} - {check['name']} on Pull Request #{pr_id} (run #{
         print('-'*50)
         pprint.pprint(r)
         print('-'*50)
-
-
-
-
-def handle_event(args):
-    logging.basicConfig(level=logging.DEBUG)
-    http = urllib3.PoolManager()
-
-    event_json_path = os.environ.get('GITHUB_EVENT_PATH', None)
-    if not event_json_path:
-        print("Did not find GITHUB_EVENT_NAME environment value.")
-        return -1
-    event_json_path = pathlib.Path(event_json_path)
-    if not event_json_path.exists():
-        print(f"Path {event_json_path} was not found.")
-        return -2
-
-    group_start('git config', debug)
-    git_config_out = subprocess.check_output(['git', 'config', '--show-origin', '--list'])
-    debug(git_config_out.decode('utf-8'))
-    group_end()
-
-    event_json_data = open(event_json_path).read()
-    group_start('Raw event_json_data', debug)
-    debug(event_json_data)
-    group_end()
-
-    event_json = json.load(open(event_json_path))
-    group_start("Event data")
-    pprint.pprint(event_json)
-    group_end()
-
-    if 'pull_request' in event_json:
-        return handle_pull_request(http, event_json)
-
-    elif 'workflow_run' in event_json:
-        return handle_workflow_run(http, event_json)
-
-
-if __name__ == "__main__":
-    sys.exit(handle_event(sys.argv[1:]))
