@@ -1,4 +1,4 @@
-# Copyright 2020 SkyWater PDK Authors
+# Copyright 2021 SkyWater PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,14 +13,12 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
-name: skywater-pdk-actions
-channels:
-- symbiflow
-- defaults
-dependencies:
-- python=3.8
-- pip
-# Packages installed from PyPI
-- pip:
-  - -r file:requirements.txt
-  - -r file:run-drc-for-cell-gds-using-magic/requirements.txt
+
+TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
+
+README.rst: README.src.rst $(TOP_DIR)/docs/*.rst $(TOP_DIR)/Makefile
+	make -C $(TOP_DIR) run-drc-for-cell-gds-using-magic/README.rst
+
+# Redirect everything to the top directory by default.
+%:
+	make -C $(TOP_DIR) $@
