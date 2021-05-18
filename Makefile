@@ -48,8 +48,10 @@ RST_OUT = $(RST_SRC:.src.rst=.rst)
 			-e's@.. warning::@*Warning*@g' \
 		> $@
 
-update-rst: $(RST_OUT)
+update-rst:
 	@echo Found $(RST_SRC) source files.
+	@touch $(RST_SRC)
+	make $(RST_OUT)
 
 
 COPYRIGHT_HOLDER := SkyWater PDK Authors
