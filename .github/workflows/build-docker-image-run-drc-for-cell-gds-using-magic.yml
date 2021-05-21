@@ -19,34 +19,134 @@ name: Build Docker Image for Run DRC for cell GDS (using Magic) Action
 on:
   workflow_dispatch:
   push:
+  pull_request_target:
 
 jobs:
-  prebuild-magic-gds-drc:
+  # FIXME: Remove once GitHub Container Registry is working.
+  # docker.pkg.github.com doesn't support buildx built packages, use
+  # docker/build-push-action instead.
+  build-github-package:
+    name: "Building Docker GitHub Package."
+
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      with:
+        # Always clone the full depth so git-describe works.
+        fetch-depth: 0
+        submodules: true
 
     - name: Set Action Name
       run: echo "ACTION_NAME=run-drc-for-cell-gds-using-magic" >> $GITHUB_ENV
 
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v1
+    - name: Build container image
+      uses: docker/build-push-action@v1
       with:
-        registry: ghcr.io
+        registry: docker.pkg.github.com
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
+        repository: ${{ github.repository }}/${{ env.ACTION_NAME }}
+        path: ${{ env.ACTION_NAME }}
+        tag_with_ref: true
+        tag_with_sha: true
+        add_git_labels: true
+        push: true
+
+
+  build-docker-image:
+    name: "Building image."
+
+    runs-on: ubuntu-latest
+
+    # Run a local registry
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        # Always clone the full depth so git-describe works.
+        fetch-depth: 0
+        submodules: true
+
+    - name: Set Action Name
+      run: echo "ACTION_NAME=run-drc-for-cell-gds-using-magic" >> $GITHUB_ENV
+
+    - name: Detect Push To Config
+      id: push_to
+      shell: python
+      env:
+        HAS_GCR_JSON_KEY: ${{ !!(secrets.GCR_JSON_KEY) }}
+      run: |
+        import os
+        gh_event = os.environ['GITHUB_EVENT_NAME']
+
+        i = []
+        print("Adding local service.")
+        i.append("localhost:5000/${{ env.ACTION_NAME }}")
+
+        if "${{ env.HAS_GCR_JSON_KEY }}":
+            print("Adding Google Container Repository (gcr.io)")
+            i.append("gcr.io/skywater-pdk/actions/${{ env.ACTION_NAME }}")
+
+        #print("Adding GitHub Container Repository (ghcr.io)")
+        #i.append("ghcr.io/${{ github.repository }}/${{ env.ACTION_NAME }}")
+
+        l = ",".join(i)
+        print("Final locations:", repr(l))
+        print("::set-output name=images::{}".format(l))
+
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: ${{ steps.push_to.outputs.images }}
+        tag-sha: true
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+      with:
+        driver-opts: network=host
+
+    - name: Login to Google Container Registry
+      if: ${{ contains(steps.push_to.outputs.images, 'gcr.io') }}
+      uses: docker/login-action@v1
+      with:
+        registry: gcr.io
+        username: _json_key
+        password: ${{ secrets.GCR_JSON_KEY }}
+
+    - name: Login to GitHub Container Registry
+      if: ${{ contains(steps.push_to.outputs.images, 'ghcr.io') }}
+      uses: docker/login-action@v1
+      with:
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
+        registry: ghcr.io
 
     - name: Build and push
       uses: docker/build-push-action@v2
+      id: docker_build
       with:
         context: ${{ env.ACTION_NAME }}
         file: ${{ env.ACTION_NAME }}/Dockerfile
         push: true
-        tags: ghcr.io/${{ github.repository }}-${{ env.ACTION_NAME }}:latest
+        tags: |
+          ${{ steps.docker_meta.outputs.tags }}
+          localhost:5000/${{ env.ACTION_NAME }}:latest
+        labels: ${{ steps.docker_meta.outputs.labels }}
+
+    - name: Inspect
+      run: docker buildx imagetools inspect localhost:5000/${{ env.ACTION_NAME }}:latest
 
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
