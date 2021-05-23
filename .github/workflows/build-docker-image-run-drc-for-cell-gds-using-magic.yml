@@ -21,7 +21,13 @@ on:
   push:
   pull_request_target:
 
+
+permissions:
+  contents: read
+
+
 jobs:
+
   # FIXME: Remove once GitHub Container Registry is working.
   # docker.pkg.github.com doesn't support buildx built packages, use
   # docker/build-push-action instead.
@@ -29,6 +35,9 @@ jobs:
     name: "Building Docker GitHub Package."
 
     runs-on: ubuntu-latest
+
+    permissions:
+      packages: write # ${{ github.event_name == "push" || github.event_name == "workflow_dispatch" }}
 
     steps:
     - name: Checkout code
