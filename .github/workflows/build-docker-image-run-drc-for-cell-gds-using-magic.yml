@@ -52,7 +52,7 @@ jobs:
         tag_with_ref: true
         tag_with_sha: true
         add_git_labels: true
-        push: true
+        push: ${{ startsWith(github.ref, 'refs/heads/') }}
 
 
   build-docker-image:
@@ -68,6 +68,10 @@ jobs:
           - 5000:5000
 
     steps:
+
+    - name: Dump context
+      uses: crazy-max/ghaction-dump-context@v1
+
     - name: Checkout code
       uses: actions/checkout@v2
       with:
@@ -104,7 +108,7 @@ jobs:
 
     - name: Docker meta
       id: docker_meta
-      uses: docker/metadata-action@v3
+      uses: mithro/docker-metadata-action@master
       with:
         images: ${{ steps.push_to.outputs.images }}
         tags: |
