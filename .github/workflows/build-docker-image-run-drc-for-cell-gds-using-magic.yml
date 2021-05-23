@@ -68,6 +68,10 @@ jobs:
           - 5000:5000
 
     steps:
+
+    - name: Dump context
+      uses: crazy-max/ghaction-dump-context@v1
+
     - name: Checkout code
       uses: actions/checkout@v2
       with:
