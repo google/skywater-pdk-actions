@@ -117,7 +117,7 @@ jobs:
 
     - name: Docker meta
       id: docker_meta
-      uses: mithro/docker-metadata-action@master
+      uses: docker/metadata-action@v3
       with:
         images: ${{ steps.push_to.outputs.images }}
         tags: |
