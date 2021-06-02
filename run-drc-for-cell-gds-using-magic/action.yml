@@ -20,6 +20,10 @@ description: >-
   directory.
 
 inputs:
+  top:
+    description: >-
+        What directory to run the check inside.
+    default: .
   acceptable-errors-file:
     description: >-
         A file containing a list of newline-delimited acceptable DRC errors.
@@ -38,6 +42,8 @@ runs:
   using: 'docker'
   image: docker://gcr.io/skywater-pdk/actions/run-drc-for-cell-gds-using-magic:main
   args:
+  - --top
+  - ${{ inputs.top }}
   - --acceptable-errors-file
   - ${{ inputs.acceptable-errors-file }}
   - --match-directories

@@ -135,6 +135,13 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
 
 @click.command()
 @click.option(
+    "-t",
+    "--top",
+    default=".",
+    help="Directory to run the process inside."
+         " Default: Current working directory"
+)
+@click.option(
     "-a",
     "--acceptable-errors-file",
     default="/dev/null",
@@ -156,8 +163,10 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
          " thus do not cause a non-zero exit upon failure."
          " Default: empty string (None of them.)"
 )
-def run_all_drc(acceptable_errors_file, match_directories, known_bad):
-    print("Testing cells in directories matching /%s/…" % match_directories)
+def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
+    os.chdir(top)
+    print("Testing cells in %s directories matching /%s/…" % (
+        os.getcwd(), match_directories))
 
     global acceptable_errors
     acceptable_errors_str = open(acceptable_errors_file).read()
