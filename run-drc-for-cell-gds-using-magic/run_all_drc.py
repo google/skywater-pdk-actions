@@ -176,8 +176,15 @@ def run_all_drc(
         os.getcwd(), match_cell_directories))
 
     global acceptable_errors
-    acceptable_errors_str = open(acceptable_errors_file).read()
-    acceptable_errors = acceptable_errors_str.split("\n")
+    acceptable_errors = []
+    with open(acceptable_errors_file) as f:
+        acceptable_errors += f.read().split("\n")
+
+    cells_dir = "./cells"
+    lib_acceptable_errors_file = os.path.join(cells_dir, 'allowed_drc_errors')
+    if os.path.exists(lib_acceptable_errors_file):
+        with open(lib_acceptable_errors_file) as f:
+            acceptable_errors += f.read().split("\n")
 
     known_bad_list = known_bad.split(",")
 
@@ -185,7 +192,6 @@ def run_all_drc(
     with futures.ThreadPoolExecutor(max_workers=nproc) as executor:
         future_list = []
 
-        cells_dir = "./cells"
         cells = os.listdir(cells_dir)
 
         for cell in cells:
@@ -194,6 +200,8 @@ def run_all_drc(
                 continue
 
             cell_dir = os.path.join(cells_dir, cell)
+            if not os.path.isdir(cell_dir):
+                continue
 
             gds_list = list(
                 filter(lambda x: x.endswith(".gds"), os.listdir(cell_dir))

@@ -14,6 +14,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# WARNING! Don't modify this file, modify the base `action.yml` file and then
+# run `make tests/action-local/action.yml`.
+
 name: run-drc-for-cell-gds-using-magic
 description: >-
   This GitHub action runs Design Rule Checks on all GDS files inside the /cells
@@ -40,7 +43,7 @@ inputs:
 
 runs:
   using: 'docker'
-  image: docker://gcr.io/skywater-pdk/actions/run-drc-for-cell-gds-using-magic:main
+  image: ../../Dockerfile
   args:
   - --top
   - ${{ inputs.top }}
