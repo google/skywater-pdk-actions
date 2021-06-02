@@ -150,10 +150,11 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
 )
 @click.option(
     "-m",
-    "--match-directories",
+    "--match-cell-directories",
     default="^.*$",
-    help="A regex that will match subdirectories under cells/."
-         " Default: . (matches everything.)"
+    help="A regex that that will match cell names to be checked (which will"
+         " match subdirectories under cells/)."
+         " Default: ^.*$ (matches everything)"
 )
 @click.option(
     "-b",
@@ -163,10 +164,16 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
          " thus do not cause a non-zero exit upon failure."
          " Default: empty string (None of them.)"
 )
-def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
+def run_all_drc(
+            top,
+            acceptable_errors_file,
+            match_cell_directories,
+            known_bad,
+        ):
+
     os.chdir(top)
     print("Testing cells in %s directories matching /%s/…" % (
-        os.getcwd(), match_directories))
+        os.getcwd(), match_cell_directories))
 
     global acceptable_errors
     acceptable_errors_str = open(acceptable_errors_file).read()
@@ -182,7 +189,7 @@ def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
         cells = os.listdir(cells_dir)
 
         for cell in cells:
-            if not re.fullmatch(match_directories, cell):
+            if not re.fullmatch(match_cell_directories, cell):
                 print("Skipping directory %s…" % cell)
                 continue
 
@@ -204,24 +211,23 @@ def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
             total += 1
             cell_name, errors = future.result()
 
-            if cell_name in known_bad_list:
-                symbol = "✘\ufe0f"
-                message = "ERROR (ignored as known bad)"
-            else:
-                symbol = "❌"
-                message = "ERROR"
-
             if len(errors) == 0:
                 successes += 1
                 # This tick is rendered black on all major platforms except for
                 # Microsoft.
                 symbol = "✔\ufe0f"
                 message = "CLEAN"
+            elif cell_name in known_bad_list:
+                symbol = "✘\ufe0f"
+                message = "ERROR (ignored as known bad)"
+            else:
+                symbol = "❌"
+                message = "ERROR"
+                exit_code = 65
+
             print("%-64s %s %s" % (cell_name, symbol, message))
 
             if len(errors) != 0:
-                if cell_name not in known_bad_list:
-                    exit_code = 65
                 for error in errors:
                     print("* %s" % error[0])
                     for line in error[1]:

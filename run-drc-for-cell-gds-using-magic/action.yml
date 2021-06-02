@@ -28,9 +28,9 @@ inputs:
     description: >-
         A file containing a list of newline-delimited acceptable DRC errors.
     default: /dev/null
-  match-directories:
+  match-cell-directories:
     description: >-
-        A regex that will match subdirectories under cells to be checked.
+        A regex that will match cell names to be checked.
     default: ^.*$
   known-bad:
     description: >-
@@ -46,7 +46,7 @@ runs:
   - ${{ inputs.top }}
   - --acceptable-errors-file
   - ${{ inputs.acceptable-errors-file }}
-  - --match-directories
-  - ${{ inputs.match-directories }}
+  - --match-cell-directories
+  - ${{ inputs.match-cell-directories }}
   - --known-bad
   - ${{ join(inputs.known-bad, ',') }}
