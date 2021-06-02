@@ -151,7 +151,7 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
 @click.option(
     "-m",
     "--match-directories",
-    default=".",
+    default="^.*$",
     help="A regex that will match subdirectories under cells/."
          " Default: . (matches everything.)"
 )
@@ -182,7 +182,7 @@ def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
         cells = os.listdir(cells_dir)
 
         for cell in cells:
-            if not re.match(match_directories, cell):
+            if not re.fullmatch(match_directories, cell):
                 print("Skipping directory %s…" % cell)
                 continue
 
