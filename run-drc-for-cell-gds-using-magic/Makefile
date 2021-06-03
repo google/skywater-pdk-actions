@@ -16,8 +16,15 @@
 
 TOP_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST)))/..)
 
+NAME := run-drc-for-cell-gds-using-magic
+
+tests/action-local/action.yml: action.yml .update-test-action-local.py
+	$(TOP_DIR)/$(NAME)/.update-test-action-local.py
+
+.PHONY: tests/action-local/action.yml
+
 README.rst: README.src.rst $(TOP_DIR)/docs/*.rst $(TOP_DIR)/Makefile
-	make -C $(TOP_DIR) run-drc-for-cell-gds-using-magic/README.rst
+	make -C $(TOP_DIR) $(NAME)/README.rst
 
 # Redirect everything to the top directory by default.
 %:

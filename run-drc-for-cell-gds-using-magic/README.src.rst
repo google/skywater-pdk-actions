@@ -19,9 +19,7 @@ Add this to any push, PR or manual dispatch workflow:
        - uses: actions/checkout@v2
 
        - name: Run DRC for cell GDS (using Magic)
-         uses: docker://gcr.io/skywater-pdk/actions/run-drc-for-cell-gds-using-magic:latest
-         with:
-           args: --acceptable-errors-file /dev/null --match-directories . --known-bad ''
+         uses: google/skywater-pdk-actions/run-drc-for-cell-gds-using-magic@main
 
 Check the Python file for more documentation on arguments.
 

@@ -135,6 +135,13 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
 
 @click.command()
 @click.option(
+    "-t",
+    "--top",
+    default=".",
+    help="Directory to run the process inside."
+         " Default: Current working directory"
+)
+@click.option(
     "-a",
     "--acceptable-errors-file",
     default="/dev/null",
@@ -143,10 +150,11 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
 )
 @click.option(
     "-m",
-    "--match-directories",
-    default=".",
-    help="A regex that will match subdirectories under cells/."
-         " Default: . (matches everything.)"
+    "--match-cell-directories",
+    default="^.*$",
+    help="A regex that that will match cell names to be checked (which will"
+         " match subdirectories under cells/)."
+         " Default: ^.*$ (matches everything)"
 )
 @click.option(
     "-b",
@@ -156,12 +164,27 @@ def drc_gds(path: str) -> Tuple[str, List[DRCError]]:
          " thus do not cause a non-zero exit upon failure."
          " Default: empty string (None of them.)"
 )
-def run_all_drc(acceptable_errors_file, match_directories, known_bad):
-    print("Testing cells in directories matching /%s/…" % match_directories)
+def run_all_drc(
+            top,
+            acceptable_errors_file,
+            match_cell_directories,
+            known_bad,
+        ):
+
+    os.chdir(top)
+    print("Testing cells in %s directories matching /%s/…" % (
+        os.getcwd(), match_cell_directories))
 
     global acceptable_errors
-    acceptable_errors_str = open(acceptable_errors_file).read()
-    acceptable_errors = acceptable_errors_str.split("\n")
+    acceptable_errors = []
+    with open(acceptable_errors_file) as f:
+        acceptable_errors += f.read().split("\n")
+
+    cells_dir = "./cells"
+    lib_acceptable_errors_file = os.path.join(cells_dir, 'allowed_drc_errors')
+    if os.path.exists(lib_acceptable_errors_file):
+        with open(lib_acceptable_errors_file) as f:
+            acceptable_errors += f.read().split("\n")
 
     known_bad_list = known_bad.split(",")
 
@@ -169,15 +192,16 @@ def run_all_drc(acceptable_errors_file, match_directories, known_bad):
     with futures.ThreadPoolExecutor(max_workers=nproc) as executor:
         future_list = []
 
-        cells_dir = "./cells"
         cells = os.listdir(cells_dir)
 
         for cell in cells:
-            if not re.match(match_directories, cell):
+            if not re.fullmatch(match_cell_directories, cell):
                 print("Skipping directory %s…" % cell)
                 continue
 
             cell_dir = os.path.join(cells_dir, cell)
+            if not os.path.isdir(cell_dir):
+                continue
 
             gds_list = list(
                 filter(lambda x: x.endswith(".gds"), os.listdir(cell_dir))
@@ -195,19 +219,23 @@ def run_all_drc(acceptable_errors_file, match_directories, known_bad):
             total += 1
             cell_name, errors = future.result()
 
-            symbol = "❌"
-            message = "ERROR"
             if len(errors) == 0:
                 successes += 1
                 # This tick is rendered black on all major platforms except for
                 # Microsoft.
                 symbol = "✔\ufe0f"
                 message = "CLEAN"
+            elif cell_name in known_bad_list:
+                symbol = "✘\ufe0f"
+                message = "ERROR (ignored as known bad)"
+            else:
+                symbol = "❌"
+                message = "ERROR"
+                exit_code = 65
+
             print("%-64s %s %s" % (cell_name, symbol, message))
 
             if len(errors) != 0:
-                if cell_name not in known_bad_list:
-                    exit_code = 65
                 for error in errors:
                     print("* %s" % error[0])
                     for line in error[1]:

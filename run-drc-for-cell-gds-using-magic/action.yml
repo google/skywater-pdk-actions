@@ -1,0 +1,52 @@
+# Copyright 2020 SkyWater PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: run-drc-for-cell-gds-using-magic
+description: >-
+  This GitHub action runs Design Rule Checks on all GDS files inside the /cells
+  directory.
+
+inputs:
+  top:
+    description: >-
+        What directory to run the check inside.
+    default: .
+  acceptable-errors-file:
+    description: >-
+        A file containing a list of newline-delimited acceptable DRC errors.
+    default: /dev/null
+  match-cell-directories:
+    description: >-
+        A regex that will match cell names to be checked.
+    default: ^.*$
+  known-bad:
+    description: >-
+        Common separated list of known bad cells that should be ignored.
+    default:
+
+
+runs:
+  using: 'docker'
+  image: docker://gcr.io/skywater-pdk/actions/run-drc-for-cell-gds-using-magic:main
+  args:
+  - --top
+  - ${{ inputs.top }}
+  - --acceptable-errors-file
+  - ${{ inputs.acceptable-errors-file }}
+  - --match-cell-directories
+  - ${{ inputs.match-cell-directories }}
+  - --known-bad
+  - ${{ inputs.known-bad }}
