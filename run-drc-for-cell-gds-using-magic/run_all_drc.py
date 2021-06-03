@@ -204,8 +204,13 @@ def run_all_drc(top, acceptable_errors_file, match_directories, known_bad):
             total += 1
             cell_name, errors = future.result()
 
-            symbol = "❌"
-            message = "ERROR"
+            if cell_name in known_bad_list:
+                symbol = "✘\ufe0f"
+                message = "ERROR (ignored as known bad)"
+            else:
+                symbol = "❌"
+                message = "ERROR"
+
             if len(errors) == 0:
                 successes += 1
                 # This tick is rendered black on all major platforms except for
