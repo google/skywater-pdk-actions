@@ -24,6 +24,7 @@ import time
 import requests
 import json
 
+GH_PULLREQUEST_PREFIX = 'backport/'
 
 def run(cmd, **kw):
     sys.stdout.flush()
@@ -84,7 +85,7 @@ def reset_branches(git_root):
     all_local_branches = subprocess.check_output(
         'git branch', shell=True).decode('utf-8').split()
     for branch in all_local_branches:
-        if branch != "*" and not branch.startswith('pullrequest/temp/'):
+        if branch != "*" and not branch.startswith(GH_PULLREQUEST_PREFIX):
             git('checkout {0}'.format(branch), git_root)
             git('reset --hard origin/{0}'.format(branch), git_root)
 
@@ -95,8 +96,9 @@ def get_sequence_number(pull_request_id):
         'git branch -r', shell=True).decode('utf-8').split()
     print("All branchs:", all_branches)
     git_matching_branches = [br for br in all_branches
-                             if "origin/pullrequest/temp/{0}/"
-                                .format(pull_request_id) in br]
+                             if "origin/{0}{1}/"
+                                .format(GH_PULLREQUEST_PREFIX,
+                                pull_request_id) in br]
 
     for matching_branch in git_matching_branches:
         git_sequence = max(int(matching_branch.split("/")[4]), git_sequence)
